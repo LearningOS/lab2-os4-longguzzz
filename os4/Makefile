@@ -3,6 +3,7 @@ TARGET := riscv64gc-unknown-none-elf
 MODE := release
 KERNEL_ELF := target/$(TARGET)/$(MODE)/os
 KERNEL_BIN := $(KERNEL_ELF).bin
+KERNEL_ASM := $(KERNEL_ELF).asm
 
 # BOARD
 BOARD ?= qemu
@@ -22,6 +23,10 @@ BASE ?= 1
 
 build: env $(KERNEL_BIN)
 
+$(KERNEL_BIN): kernel
+	@$(OBJCOPY) $(KERNEL_ELF) --strip-all -O binary $@
+	@$(OBJDUMP) $(KERNEL_ELF) -S > $(KERNEL_ELF).asm
+
 env:
 	(rustup target list | grep "riscv64gc-unknown-none-elf (installed)") || rustup target add $(TARGET)
 	cargo install cargo-binutils
@@ -30,7 +35,7 @@ $(KERNEL_BIN): kernel
 	@$(OBJCOPY) $(KERNEL_ELF) --strip-all -O binary $@
 
 kernel:
-	@cd ../user && make build TEST=$(TEST)
+	@make -C ../user build TEST=$(TEST) CHAPTER=$(CHAPTER) BASE=$(BASE)
 	@cargo build --release
 
 clean:
